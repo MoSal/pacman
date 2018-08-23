@@ -63,7 +63,7 @@ tidy_split_staticlibs() {
 	mkdir -p "$staticlibs_pkgdir"
 
 	# Move all static lib files (including symlinks)
-	find "$pkgdir" ! -type d -perm -u+w -name '*.a' 2>/dev/null | while read st ; do
+	find "$pkgdir" ! -type d -name '*.a' 2>/dev/null | while read st ; do
 		if is_ar_archive "$st"; then
 			st_dir="${st%/*}"
 			split_st_dir="${st_dir/$pkgdir/$staticlibs_pkgdir}"
