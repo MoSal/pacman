@@ -48,6 +48,8 @@ declare -r startdir="$(pwd -P)"
 
 LIBRARY=${LIBRARY:-'@libmakepkgdir@'}
 
+packaging_options+=('autolibprovides')
+packaging_options+=('autolibdepends')
 build_options=('ccache' 'distcc' 'buildflags' 'makeflags')
 splitpkg_overrides=('pkgdesc' 'arch' 'url' 'license' 'groups' 'depends'
                     'optdepends' 'provides' 'conflicts' 'replaces' 'backup'
@@ -499,6 +501,42 @@ run_package() {
 	run_function_safe "package${1:+_$1}"
 }
 
+auto_libdepends() {
+	local l f solib search_paths bin_paths autolibdepends
+
+	msg2 "$(gettext "Auto-adding libdepends...")"
+
+	# Only search default library/binary paths
+	search_paths=($(${CC:-gcc} -print-search-dirs | grep '^lib' | sed "s|^libraries: =|:|;s|:| ${pkgdir}|g"))
+	bin_paths=(${pkgdir}${PATH//:/ ${pkgdir}})
+
+	for f in $(find ${search_paths[@]} ${bin_paths[@]} -maxdepth 1 -type f 2>/dev/null); do
+		# Skip files with relative path to avoid wasting time on dups
+		if [[ ! "$f" =~ \.\./ ]]; then
+			while read solib; do
+				if ! in_array "${solib}" ${autolibdepends[@]}; then
+					autolibdepends+=(${solib})
+				fi
+			done < <(LC_ALL=C readelf -d "$f" 2>/dev/null | grep '(NEEDED)' | while read l; do
+				l="${l#*\[}"
+				echo "${l%.so*}.so"
+			done)
+		fi
+	done
+
+	# Pass depends if there is any
+	# We don't do this unconditionally to avoid passing an empty line to mapfile
+	if [[ ${depends[@]} ]]; then
+		printf '%s\n' "${depends[@]}"
+	fi
+
+	# Print and pass autolibdepends if any was found
+	if [[ ${autolibdepends[@]} ]]; then
+		msg2 "$(gettext "Auto-added libdepends %s")" "${autolibdepends[@]}"
+		printf '%s\n' "${autolibdepends[@]}"
+	fi
+}
+
 find_libdepends() {
 	local d sodepends
 
@@ -563,6 +601,34 @@ find_libdepends() {
 	(( ${#libdepends[@]} )) && printf '%s\n' "${libdepends[@]}"
 }
 
+auto_libprovides() {
+	local f solib search_paths autolibprovides
+
+	msg2 "$(gettext "Auto-adding libprovides...")"
+
+	# Only search default library paths
+	search_paths=($(${CC:-gcc} -print-search-dirs | grep '^lib' | sed "s|^libraries: =|:|;s|:| ${pkgdir}|g"))
+
+	for f in $(find ${search_paths[@]} -maxdepth 1 -type f 2>/dev/null); do
+		# Match solibs, but exclude ones with a relative path to avoid dups
+		if [[ "$f" =~ \.so ]]  && [[ ! "$f" =~ \.\./ ]]; then
+			solib="${f##*/}"
+			autolibprovides+=("${solib%.so*}.so")
+		fi
+	done
+
+	# Pass provides if there is any
+	# We don't do this unconditionally to avoid passing an empty line to mapfile
+	if [[ ${provides[@]} ]]; then
+		printf '%s\n' "${provides[@]}"
+	fi
+
+	# Print and pass autolibprovides if any was found
+	if [[ ${autolibprovides[@]} ]]; then
+		msg2 "$(gettext "Auto-added libprovides %s")" "${autolibprovides[@]}"
+		printf '%s\n' "${autolibprovides[@]}"
+	fi
+}
 
 find_libprovides() {
 	local p libprovides missing
@@ -655,7 +721,14 @@ write_pkginfo() {
 	write_kv_pair "size" "$size"
 	write_kv_pair "arch" "$pkgarch"
 
+	if check_option "autolibprovides" "y"; then
+		mapfile -t provides < <(auto_libprovides)
+	fi
 	mapfile -t provides < <(find_libprovides)
+
+	if check_option "autolibdepends" "y"; then
+		mapfile -t depends < <(auto_libdepends)
+	fi
 	mapfile -t depends < <(find_libdepends)
 
 	write_kv_pair "license"     "${license[@]}"
