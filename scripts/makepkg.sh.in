@@ -845,6 +845,35 @@ create_package() {
 	fi
 }
 
+create_split_staticlib_package() {
+	# check if a staticlib package was requested
+	if ! check_option "split-staticlibs" "y"; then
+		return
+	fi
+
+	local pkgdir_backup="$pkgdir"
+	local pkgname_backup="$pkgname"
+
+	pkgdir="${pkgdir}-@SPLIT_STATIC_SUFFIX@"
+
+	# check if we have any moved/split static libs to package
+	if dir_is_empty "$pkgdir"; then
+		return
+	fi
+
+	depends=("$pkgname=$(get_full_version)")
+	pkgdesc="Split static libs from $pkgname"
+	pkgname=$pkgname-@SPLIT_STATIC_SUFFIX@
+
+	unset groups optdepends provides conflicts replaces backup install changelog
+
+	create_package
+	create_debug_package
+
+	pkgdir="$pkgdir_backup"
+	pkgname="$pkgname_backup"
+}
+
 create_debug_package() {
 	# check if a debug package was requested
 	if ! check_option "debug" "y" || ! check_option "strip" "y"; then
@@ -955,6 +984,10 @@ install_package() {
 		fullver=$(get_full_version)
 		pkgarch=$(get_pkg_arch $pkg)
 		pkglist+=("$PKGDEST/${pkg}-${fullver}-${pkgarch}${PKGEXT}")
+
+		if [[ -f "$PKGDEST/${pkg}-@SPLIT_STATIC_SUFFIX@-${fullver}-${pkgarch}${PKGEXT}" ]]; then
+			pkglist+=("$PKGDEST/${pkg}-@SPLIT_STATIC_SUFFIX@-${fullver}-${pkgarch}${PKGEXT}")
+		fi
 
 		if [[ -f "$PKGDEST/${pkg}-@DEBUGSUFFIX@-${fullver}-${pkgarch}${PKGEXT}" ]]; then
 			pkglist+=("$PKGDEST/${pkg}-@DEBUGSUFFIX@-${fullver}-${pkgarch}${PKGEXT}")
@@ -1216,6 +1249,7 @@ run_split_packaging() {
 		tidy_install
 		lint_package || exit $E_PACKAGE_FAILED
 		create_package
+		create_split_staticlib_package
 		restore_package_variables
 	done
 	pkgname=("${pkgname_backup[@]}")
@@ -1628,6 +1662,7 @@ if (( INFAKEROOT )); then
 		tidy_install
 		lint_package || exit $E_PACKAGE_FAILED
 		create_package
+		create_split_staticlib_package
 		create_debug_package
 	else
 		run_split_packaging

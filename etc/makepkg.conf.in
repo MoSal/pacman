@@ -73,20 +73,21 @@ BUILDENV=(!distcc color !ccache check !sign)
 #   These are default values for the options=() settings
 #########################################################################
 #
-# Default: OPTIONS=(!strip docs libtool staticlibs emptydirs !zipman !purge !debug !autolibprovides !autolibdepends)
+# Default: OPTIONS=(!strip docs libtool !split-staticlibs staticlibs emptydirs !zipman !purge !debug !autolibprovides !autolibdepends)
 #  A negated option will do the opposite of the comments below.
 #
-#-- strip:           Strip symbols from binaries/libraries
-#-- docs:            Save doc directories specified by DOC_DIRS
-#-- libtool:         Leave libtool (.la) files in packages
-#-- staticlibs:      Leave static library (.a) files in packages
-#-- emptydirs:       Leave empty directories in packages
-#-- zipman:          Compress manual (man and info) pages in MAN_DIRS with gzip
-#-- purge:           Remove files specified by PURGE_TARGETS
-#-- autolibprovides: Auto-add so provides
-#-- autolibdepends:  Auto-add so depends
+#-- strip:            Strip symbols from binaries/libraries
+#-- docs:             Save doc directories specified by DOC_DIRS
+#-- libtool:          Leave libtool (.la) files in packages
+#-- split-staticlibs: Split static library (.a) files into a separate package
+#-- staticlibs:       Leave static library (.a) files in packages
+#-- emptydirs:        Leave empty directories in packages
+#-- zipman:           Compress manual (man and info) pages in MAN_DIRS with gzip
+#-- purge:            Remove files specified by PURGE_TARGETS
+#-- autolibprovides:  Auto-add so provides
+#-- autolibdepends:   Auto-add so depends
 #
-OPTIONS=(strip docs libtool staticlibs emptydirs zipman purge !debug !autolibprovides !autolibdepends)
+OPTIONS=(strip docs libtool !split-staticlibs staticlibs emptydirs zipman purge !debug !autolibprovides !autolibdepends)
 
 #-- File integrity checks to use. Valid: md5, sha1, sha224, sha256, sha384, sha512
 INTEGRITY_CHECK=(md5)

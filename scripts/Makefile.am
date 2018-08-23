@@ -100,6 +100,7 @@ LIBMAKEPKG_IN = \
 	libmakepkg/tidy/emptydirs.sh \
 	libmakepkg/tidy/libtool.sh \
 	libmakepkg/tidy/purge.sh \
+	libmakepkg/tidy/split_staticlibs.sh \
 	libmakepkg/tidy/staticlibs.sh \
 	libmakepkg/tidy/strip.sh \
 	libmakepkg/tidy/zipman.sh \
@@ -157,6 +158,7 @@ edit = sed \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@BUILDSCRIPT[@]|$(BUILDSCRIPT)|g' \
 	-e 's|@TEMPLATE_DIR[@]|$(TEMPLATE_DIR)|g' \
+	-e 's|@SPLIT_STATIC_SUFFIX[@]|$(SPLIT_STATIC_SUFFIX)|g' \
 	-e 's|@DEBUGSUFFIX[@]|$(DEBUGSUFFIX)|g' \
 	-e "s|@INODECMD[@]|$(INODECMD)|g" \
 	-e "s|@OWNERCMD[@]|$(OWNERCMD)|g" \
