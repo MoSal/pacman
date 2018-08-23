@@ -27,13 +27,13 @@ LIBRARY=${LIBRARY:-'@libmakepkgdir@'}
 source "$LIBRARY/util/message.sh"
 
 
-declare -a packaging_options tidy_remove tidy_modify
+declare -a packaging_options tidy_move tidy_remove tidy_modify
 
 for lib in "$LIBRARY/tidy/"*.sh; do
 	source "$lib"
 done
 
-readonly -a packaging_options tidy_remove tidy_modify
+readonly -a packaging_options tidy_move tidy_remove tidy_modify
 
 
 tidy_install() {
@@ -47,6 +47,11 @@ tidy_install() {
 
 	# options that modify files
 	for func in ${tidy_modify[@]}; do
+		$func
+	done
+
+	# options that move files to a separate package (run those last)
+	for func in ${tidy_move[@]}; do
 		$func
 	done
 }

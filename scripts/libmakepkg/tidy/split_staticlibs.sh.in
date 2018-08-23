@@ -1,0 +1,90 @@
+#!/bin/bash
+#
+#   split_staticlibs.sh - Move/Split static libraries to a separate package
+#
+#   Copyright (c) 2007-2015 Pacman Development Team <pacman-dev@archlinux.org>
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+[[ -n "$LIBMAKEPKG_TIDY_SPLIT_STATICLIBS_SH" ]] && return
+LIBMAKEPKG_TIDY_SPLIT_STATICLIBS_SH=1
+
+LIBRARY=${LIBRARY:-'@libmakepkgdir@'}
+
+source "$LIBRARY/util/message.sh"
+source "$LIBRARY/util/option.sh"
+
+
+packaging_options+=('split-staticlibs')
+tidy_move+=('tidy_split_staticlibs')
+
+is_ar_archive() {
+	# Detect if a file is an 'ar archive' using bash built-ins only
+	local magic f
+
+	for f in $@; do
+		[[ ! -f "$f"  ]] && return 1
+
+		read -n7 < "$f"  magic
+
+		if [[ "$magic" != '!<arch>' ]]; then
+			return 1
+		fi
+	done
+
+	return 0
+}
+
+
+tidy_split_staticlibs() {
+	if check_option "split-staticlibs" "n"; then
+		return
+	fi
+
+	local staticlibs_pkgdir staticlibs_debug_pkgdir
+	local st st_dir split_st_dir
+	local st_debug st_debug_dir split_st_debug_dir
+
+	msg2 "$(gettext "Moving static libraries in default paths to a separate package...")"
+
+	staticlibs_pkgdir="${pkgdir}-@SPLIT_STATIC_SUFFIX@"
+	mkdir -p "$staticlibs_pkgdir"
+
+	# Move all static lib files (including symlinks)
+	find "$pkgdir" ! -type d -perm -u+w -name '*.a' 2>/dev/null | while read st ; do
+		if is_ar_archive "$st"; then
+			st_dir="${st%/*}"
+			split_st_dir="${st_dir/$pkgdir/$staticlibs_pkgdir}"
+			mkdir -p "$split_st_dir"
+			mv "$st" "$split_st_dir"
+		fi
+	done
+
+	# debug
+	if check_option "debug" "y"; then
+		staticlibs_debug_pkgdir="${pkgdir}-@SPLIT_STATIC_SUFFIX@-@DEBUGSUFFIX@"
+		mkdir -p "$staticlibs_debug_pkgdir"
+
+		# Move all static lib debug files (including symlinks)
+		find "${pkgdir}-@DEBUGSUFFIX@" ! -type d -perm -u+w -name '*.a.debug' 2>/dev/null | while read st_debug ; do
+			if is_ar_archive "$st_debug"; then
+				st_debug_dir="${st_debug%/*}"
+				split_st_debug_dir="${st_debug_dir/${pkgdir}-@DEBUGSUFFIX@/$staticlibs_debug_pkgdir}"
+				mkdir -p "$split_st_debug_dir"
+				mv "$st_debug" "$split_st_debug_dir"
+			fi
+		done
+	fi
+}

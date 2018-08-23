@@ -103,6 +103,11 @@ AC_ARG_WITH(makepkg-template-dir,
 	AS_HELP_STRING([--with-makepkg-template-dir=name], [set the template dir used by makepkg-template]),
 	[TEMPLATE_DIR=$withval], [TEMPLATE_DIR=/usr/share/makepkg-template])
 
+# Help line for split staticlibs package suffix
+AC_ARG_WITH(split-staticlibs-suffix,
+	AS_HELP_STRING([--with-split-staticlibs-suffix=name], [set the suffix for split staticlibs packages used by makepkg]),
+	[SPLIT_STATIC_SUFFIX=$withval], [SPLIT_STATIC_SUFFIX=staticlibs])
+
 # Help line for debug package suffix
 AC_ARG_WITH(debug-suffix,
 	AS_HELP_STRING([--with-debug-suffix=name], [set the suffix for split debugging symbol packages used by makepkg]),
@@ -517,6 +522,9 @@ AC_DEFINE_UNQUOTED([BUILDSCRIPT], "$BUILDSCRIPT", [The build script name used by
 # Set makepkg-template template directory
 AC_SUBST(TEMPLATE_DIR)
 AC_DEFINE_UNQUOTED([TEMPLATE_DIR], "$TEMPLATE_DIR", [The template directory used by makepkg-teplate])
+# Set makepkg split staticlibs package suffix
+AC_SUBST(SPLIT_STATIC_SUFFIX)
+AC_DEFINE_UNQUOTED([SPLIT_STATIC_SUFFIX], "$SPLIT_STATIC_SUFFIX", [The suffix for split staticlibs packages used by makepkg])
 # Set makepkg split debugging symbol package suffix
 AC_SUBST(DEBUGSUFFIX)
 AC_DEFINE_UNQUOTED([DEBUGSUFFIX], "$DEBUGSUFFIX", [The suffix for debugging symbol packages used by makepkg])
